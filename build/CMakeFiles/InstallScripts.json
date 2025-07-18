@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/UserFiles/Documents/VSCode/minesweeper_c/build/cmake_install.cmake",
+		"E:/UserFiles/Documents/VSCode/minesweeper_c/build/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
