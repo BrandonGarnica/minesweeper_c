@@ -1,0 +1,38 @@
+# Ignore the entire build directory
+/build/
+
+# Ignore output binaries
+/bin/
+
+# Ignore generated CMake files but not your own CMakeLists.txt
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Do NOT ignore CMakeLists.txt files
+!CMakeLists.txt
+
+# Ignore extra *.cmake files, but explicitly keep any of your own
+*.cmake
+!src/CMakeLists.txt
+!CMakeLists.txt
+
+# Ignore Visual Studio generated files
+*.VC.db
+*.VC.opendb
+*.sln
+*.vcxproj*
+*.pdb
+
+# Ignore backup and temporary files
+*.log
+*.tmp
+*.swp
+*.user
+*.obj
+*.o
+
+# Ignore system files
+.DS_Store
+Thumbs.db

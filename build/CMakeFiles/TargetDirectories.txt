@@ -1,3 +1,0 @@
-E:/UserFiles/Documents/VSCode/minesweeper_c/build/CMakeFiles/ALL_BUILD.dir
-E:/UserFiles/Documents/VSCode/minesweeper_c/build/CMakeFiles/ZERO_CHECK.dir
-E:/UserFiles/Documents/VSCode/minesweeper_c/build/src/CMakeFiles/minesweeper.dir
