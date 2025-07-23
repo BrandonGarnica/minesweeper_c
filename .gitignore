@@ -1,38 +1,37 @@
-# Ignore the entire build directory
+# === Build Artifacts ===
 /build/
-
-# Ignore output binaries
 /bin/
-
-# Ignore generated CMake files but not your own CMakeLists.txt
-CMakeCache.txt
-CMakeFiles/
+/CMakeFiles/
+/CMakeCache.txt
 cmake_install.cmake
-Makefile
 
-# Do NOT ignore CMakeLists.txt files
-!CMakeLists.txt
-
-# Ignore extra *.cmake files, but explicitly keep any of your own
-*.cmake
-!src/CMakeLists.txt
-!CMakeLists.txt
-
-# Ignore Visual Studio generated files
-*.VC.db
-*.VC.opendb
-*.sln
-*.vcxproj*
-*.pdb
-
-# Ignore backup and temporary files
+# === Compiled Binaries and Objects ===
+*.exe
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.lib
 *.log
 *.tmp
-*.swp
-*.user
-*.obj
-*.o
 
-# Ignore system files
+# === Dependency Cache ===
+/_deps/
+
+# === OS-generated Files ===
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# === Editor/Backup/Temp Files ===
+*.ttf~
+*.bak
+*.swp
+*.swo
+*.swn
+*~
+
+# === Ignore only VS temp files, not JSON config ===
+.vscode/*.db
+.vscode/*.log
