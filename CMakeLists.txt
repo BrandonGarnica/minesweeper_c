@@ -1,12 +1,25 @@
-# Root CMakeLists.txt
-
-cmake_minimum_required(VERSION 3.16)
-project(minesweeper C)
+cmake_minimum_required(VERSION 3.15)
+project(minesweeper_c C)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Use SDL3 provided by the system (MSYS2 UCRT64)
-find_package(SDL3 REQUIRED CONFIG)
+# Add all source files
+file(GLOB SRC_FILES "src/*.c")
 
-add_subdirectory(src)
+# Include headers
+include_directories(src)
+
+# Add SDL dependencies
+find_package(SDL2 REQUIRED CONFIG)
+find_package(SDL2_ttf REQUIRED CONFIG)
+
+# Executable target
+add_executable(minesweeper ${SRC_FILES})
+
+# Link SDL
+target_link_libraries(minesweeper PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
+
+# Set output dir
+set_target_properties(minesweeper PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
