@@ -1,19 +1,18 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Build",
-      "type": "shell",
-      "command": "make",
-      "args": [],
-      "options": {
-        "cwd": "${workspaceFolder}/build",
-        "shell": {
-          "executable": "C:\\Windows\\System32\\cmd.exe",
-          "args": ["/d", "/c"]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build with make (ucrt64)",
+            "type": "shell",
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
-      },
-      "problemMatcher": ["$gcc"]
-    }
-  ]
+    ]
 }

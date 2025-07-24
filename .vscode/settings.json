@@ -1,10 +1,19 @@
 {
-  "cmake.sourceDirectory": "${workspaceFolder}",
-  "cmake.buildDirectory": "${workspaceFolder}/build",
-  "terminal.integrated.defaultProfile.windows": "Command Prompt",
-  "cmake.generator": "Unix Makefiles",
-  "files.associations": {
-    "cstdlib": "c",
-    "numbers": "c"
-  }
+    "cmake.generator": "Unix Makefiles",
+    "terminal.integrated.profiles.windows": {
+        "UCRT64": {
+            "path": "C:\\msys64\\usr\\bin\\bash.exe",
+            "args": ["--login", "-i"],
+            "env": {
+                "MSYSTEM": "UCRT64",
+                "CHERE_INVOKING": "1"
+            },
+            "icon": "terminal-bash",
+            "cwd": "${workspaceFolder}"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "UCRT64",
+    "files.associations": {
+        "stdio.h": "c"
+    }
 }
