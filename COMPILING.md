@@ -12,9 +12,16 @@ This project uses a Makefile-based build system on Windows with CMD/PS. Follow t
 pacman -S mingw-w64-ucrt-x86_64-gcc 
 pacman -S mingw-w64-ucrt-x86_64-cmake
 pacman -S mingw-w64-ucrt-x86_64-make
+pacman -S mingw-w64-ucrt-x86_64-SDL2
+pacman -S mingw-w64-ucrt-x86_64-SDL2_ttf
 pacman -S mingw-w64-ucrt-x86_64-sdl3
 ```
 Make sure to add MSYS2 to your ```PATH```. Usually ```C:\msys64\ucrt64\bin```
+If there any errors try:
+
+    pacman -S --overwrite "*" mingw-w64-ucrt-x86_64-SDL2_ttf
+
+
 
 ## Opening VS Code
 
@@ -36,7 +43,7 @@ This is the best way to open the project to ensure compatability.
 
 ## Build Instructions in VS Code
 
-Open the terminal in VS Code. VERIFY THAT YOU ARE USING THE CMD TERMINAL. All these commands will take place in the ```root``` of the project. ```C:\PATH_TO_PROJECT\minesweeper_c>```
+Open the terminal in VS Code. VERIFY THAT YOU ARE USING THE MSYS UCRT64 TERMINAL. All these commands will take place in the ```root``` of the project. ```C:\PATH_TO_PROJECT\minesweeper_c>```
 
 ### Step 1: Navigate to project root:
 
