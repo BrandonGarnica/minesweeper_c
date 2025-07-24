@@ -8,6 +8,7 @@ file(GLOB SRC_FILES "src/*.c")
 
 # Include headers
 include_directories(src)
+include_directories(includes)
 
 # Add SDL dependencies
 find_package(SDL2 REQUIRED CONFIG)
@@ -21,6 +22,6 @@ target_link_libraries(minesweeper PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
 # Set output dir
 set_target_properties(minesweeper PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/Debug
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release
 )

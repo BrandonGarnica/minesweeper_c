@@ -36,9 +36,4 @@ clean:
 CONFIG ?= Debug
 
 run:
-	@if [ -f "$(BUILD_DIR)/bin/$(CONFIG)/$(EXE_NAME)" ]; then \
-		$(BUILD_DIR)/bin/$(CONFIG)/$(EXE_NAME); \
-	else \
-		echo "ERROR: $(CONFIG) executable not found. Build it first with 'make $(CONFIG)'."; \
-		exit 1; \
-	fi
+	$(BUILD_DIR)/bin/$(CONFIG)/$(EXE_NAME)

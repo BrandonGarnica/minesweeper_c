@@ -14,6 +14,9 @@
     },
     "terminal.integrated.defaultProfile.windows": "UCRT64",
     "files.associations": {
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "stdint.h": "c",
+        "sdl.h": "c",
+        "stdlib.h": "c"
     }
 }
