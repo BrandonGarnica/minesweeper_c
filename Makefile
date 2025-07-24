@@ -1,57 +1,44 @@
-# Windows-compatible Makefile for CMD or PowerShell in VSCode
+# Cross-platform Makefile for MSYS2 UCRT64 environment
 
-# Define paths
-ROOT_DIR := $(CURDIR)
-BUILD_DIR := $(ROOT_DIR)\build
-BIN_DIR_DEBUG := $(BUILD_DIR)\bin\Debug
-BIN_DIR_RELEASE := $(BUILD_DIR)\bin\Release
-EXE_NAME := minesweeper.exe
+ROOT_DIR      := $(CURDIR)
+BUILD_DIR     := $(ROOT_DIR)/build
+BIN_DIR_DEBUG := $(BUILD_DIR)/bin/Debug
+BIN_DIR_REL   := $(BUILD_DIR)/bin/Release
+EXE_NAME      := minesweeper.exe
 
-# Full paths to UCRT64 tools
-CMAKE	:= C:\msys64\ucrt64\bin\cmake.exe
-MAKE 	:= C:\msys64\ucrt64\bin\make.exe
-CC 		:= C:\msys64\ucrt64\bin\gcc.exe
-CXX 	:= C:\msys64\ucrt64\bin\g++.exe
+CMAKE         := cmake
+MAKE          := make
+CC            := gcc
+CXX           := g++
 
-# Default target: runs 'make debug' when you just type 'make'
-.DEFAULT_GOAL := debug
+.PHONY: all setup debug release clean run
 
-# Required tools
-REQUIRED_TOOLS := $(CMAKE) $(MAKE) $(CC)
+all: debug
 
-.PHONY: require setup clean debug release run
-
-require:
-	@echo Checking required tools...
-	@if not exist "$(CMAKE)" (echo ERROR: cmake not found & exit /b 1)
-	@if not exist "$(CC)" (echo ERROR: gcc not found & exit /b 1)
-	@if not exist "$(CXX)" (echo ERROR: g++ not found & exit /b 1)
-	@if not exist "$(MAKE)" (echo ERROR: make not found & exit /b 1)
-	@echo All required tools found.
-
-setup: require
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
-	@cd "$(BUILD_DIR)" && "$(CMAKE)" -G "Unix Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Debug ..
+setup:
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Debug ..
 
 debug:
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
-	@cd "$(BUILD_DIR)" && "$(CMAKE)" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
-	@cd "$(BUILD_DIR)" && "$(MAKE)"
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
+	cd $(BUILD_DIR) && $(MAKE)
 
 release:
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
-	@cd "$(BUILD_DIR)" && "$(CMAKE)" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-	@cd "$(BUILD_DIR)" && "$(MAKE)"
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	cd $(BUILD_DIR) && $(MAKE)
 
 clean:
-	@if exist "$(BUILD_DIR)" rd /s /q "$(BUILD_DIR)"
+	rm -rf $(BUILD_DIR)
 
-# Default run target uses CONFIG=Debug or CONFIG=Release
+# Allow setting CONFIG=Debug or CONFIG=Release when running 'make run'
 CONFIG ?= Debug
 
 run:
-	@if exist "$(BUILD_DIR)\bin\$(CONFIG)\$(EXE_NAME)" ( \
-		"$(BUILD_DIR)\bin\$(CONFIG)\$(EXE_NAME)" \
-	) else ( \
-		echo ERROR: $(CONFIG) executable not found. Build it first with 'make $(CONFIG)' & exit /b 1 \
-	)
+	@if [ -f "$(BUILD_DIR)/bin/$(CONFIG)/$(EXE_NAME)" ]; then \
+		$(BUILD_DIR)/bin/$(CONFIG)/$(EXE_NAME); \
+	else \
+		echo "ERROR: $(CONFIG) executable not found. Build it first with 'make $(CONFIG)'."; \
+		exit 1; \
+	fi

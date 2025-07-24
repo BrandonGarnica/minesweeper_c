@@ -21,5 +21,6 @@ target_link_libraries(minesweeper PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
 # Set output dir
 set_target_properties(minesweeper PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release
 )
