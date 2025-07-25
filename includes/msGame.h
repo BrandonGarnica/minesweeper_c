@@ -2,44 +2,27 @@
 #define MSGAME_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
-    uint8_t width;
-    uint8_t height;
-    uint16_t mines;
-} GameDiffSettings;
-
-typedef enum {
-    GAME_MENU,
-    GAME_PLAY,
-    GAME_GAMEOVER,
-    GAME_QUIT
-} GameState;
-
-typedef enum {
-    CONTROL_STATE_INIT,
-    CONTROL_STATE_PLAYING,
-    CONTROL_STATE_WIN,
-    CONTROL_STATE_LOSE
-} ControlState;
+    uint8_t mineProx;
+    bool isMine;
+    bool isFlagged;
+    bool isHidden;
+} Cell;
 
 typedef struct {
-    GameState gameState;         // High-level mode (e.g., MENU, PLAY, QUIT)
-    ControlState controlState;   // Tracks gameplay progress
-    
-    uint8_t **minefield;
-    uint8_t **statefield;
-    uint8_t width;
-    uint8_t height;
-    uint8_t total_mines;
-} MSGame;
+    uint8_t x, y;
+} Mine;
 
-void msGame_initGameState(MSGame *game);
+typedef struct {
+    Cell **minefield;   // Pointer to 2D array of Cell structs
+    Mine *mineList;     // Pointer to array of Mine struct   
+    uint8_t width;      // Number of columns
+    uint8_t height;     // Number of rows
+    uint8_t numOfMines; // Number of rows
+} Minesweeper;
 
-void msGame_init(void);
-
-void msGame_tick(void);
-
-void msGame_free(void);
+extern Minesweeper msGame; // <- Exposes the global
 
 #endif /* MSGAME_H_ */

@@ -6,23 +6,22 @@
 
 #include "msGame.h"
 
+uint8_t initGame(Minesweeper *game, uint8_t width, uint8_t height, uint8_t num_mines);
 
-// Init minefield
-void msMinefield_init(MSGame *game);
+uint8_t generateMineLocation(Minesweeper *game, uint8_t safeX, uint8_t safeY);
 
-// Updates the minefield prox value based on number of adjacent mines
-void msMinefield_tileProx();
+void placeMines(Minesweeper *game);
 
-// Randomly generates mine locations
-void msMinefield_generateMineLocations(uint8_t gameDifficulty);
+void updateMineProx(Minesweeper *game, uint8_t mx, uint8_t my, bool draw);
 
-// Toggle flag for tile
-void msMinefield_toggleFlag();
+void updateMinefieldProx(Minesweeper *game);
 
-// Reveal title
-void msMinefield_revealTile();
+void freeMinesweeper(Minesweeper *game);
 
-// Generates minefield & inits statefield
-void msMinefield_generateMinefield();
+void msMinefield_updateCell(Minesweeper *game, uint8_t rx, uint8_t ry, uint8_t type);
+
+void printMinefield(Minesweeper *game, bool show);
+
+void msMinefield_test();
 
 #endif /* MSMINEFIELD_H_ */
