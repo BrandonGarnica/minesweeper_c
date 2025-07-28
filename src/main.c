@@ -9,8 +9,12 @@
 
 #include "msGame.h"
 #include "msMinefield.h"
+#include "msFloodFill.h"
 
 int main(int argc, char* argv[]) {
+
+    msMinefield_test();
+    msFloodFill_test();
 
     return 0;
 }
