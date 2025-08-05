@@ -1,5 +1,5 @@
-#ifndef MSGAME_H_
-#define MSGAME_H_
+#ifndef MSGAMESM_H_
+#define MSGAMESM_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,4 +25,4 @@ typedef struct {
 
 extern Minesweeper msGame; // <- Exposes the global
 
-#endif /* MSGAME_H_ */
+#endif /* MSGAMESM_H_ */

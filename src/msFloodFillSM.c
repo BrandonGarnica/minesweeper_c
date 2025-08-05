@@ -1,5 +1,5 @@
 #include "msMinefield.h"
-#include "msGame.h"
+#include "msGameSM.h"
 #include "msUtil.h"
 
 #include <stdio.h>
@@ -18,7 +18,7 @@ void msFloodFill_FF(Minesweeper *game, uint8_t col, uint8_t row) {
 
     Cell *cell = &game->minefield[col][row];
 
-    // Skip already revealecells
+    // Skip already revealedd cells
     if (!cell->isHidden)
         return;
 
@@ -28,6 +28,7 @@ void msFloodFill_FF(Minesweeper *game, uint8_t col, uint8_t row) {
     if (cell->mineProx > 0 || cell->isMine)
         return;
 
+        
     // Recursive flood fill for 8 directions
     const int8_t dx[8] = { -1, -1, -1, 0, 0, 1, 1, 1 };
     const int8_t dy[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };

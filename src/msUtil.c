@@ -1,4 +1,4 @@
-#include "msGame.h"
+#include "msGameSM.h"
 
 #include <stdio.h>
 #include <stdlib.h>

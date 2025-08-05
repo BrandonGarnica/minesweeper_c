@@ -1,7 +1,7 @@
 #ifndef MSUTIL_H_
 #define MSUTIL_H_
 
-#include "msGame.h"
+#include "msGameSM.h"
 
 #include <stdio.h>
 #include <stdlib.h>

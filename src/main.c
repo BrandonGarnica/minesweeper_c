@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "msGame.h"
+#include "msGameSM.h"
 #include "msMinefield.h"
-#include "msFloodFill.h"
+#include "msFloodFillSM.h"
 
 int main(int argc, char* argv[]) {
 

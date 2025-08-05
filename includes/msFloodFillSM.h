@@ -1,10 +1,12 @@
-#ifndef MSFLOODFILL_H_
-#define MSFLOODFILL_H_
+#ifndef MSFLOODFILLSM_H_
+#define MSFLOODFILLSM_H_
+
+#include "msGameSM.h"
+
 #include <stdint.h>
-#include "msGame.h"
 
 void msFloodFill_FF(Minesweeper *game, uint8_t row, uint8_t col);
 
 void msFloodFill_test();
 
-#endif /* MSFLOODFILL_H_ */
+#endif /* MSFLOODFILLSM_H_ */

@@ -1,0 +1,4 @@
+#ifndef MSUSERINPUTSM_H_
+#define MSUSERINPUTSM_H_
+
+#endif /* MSUSERINPUTSM_H_ */

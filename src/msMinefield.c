@@ -1,5 +1,5 @@
 #include "msMinefield.h"
-#include "msGame.h"
+#include "msGameSM.h"
 #include "msUtil.h"
 
 #include <stdio.h>
@@ -124,6 +124,7 @@ void msMinefield_toggleFlagCell(Minesweeper *game, uint8_t col, uint8_t row) {
         return;
 
     cell->isFlagged = !cell->isFlagged;
+    // Draw Flagged icon on cell location
 }
 
 void msMinefield_revealCell(Minesweeper *game, uint8_t col, uint8_t row) {
@@ -138,6 +139,7 @@ void msMinefield_revealCell(Minesweeper *game, uint8_t col, uint8_t row) {
         return;
 
     cell->isHidden = false;
+    // Draw cell prox or if mine
 }
 
 void msMinefield_freeMinesweeper(Minesweeper *game) {
@@ -164,7 +166,7 @@ void msMinefield_freeMinesweeper(Minesweeper *game) {
     game->nMines = 0;
 }
 
-void msMinefield_printMinefield(Minesweeper *game, bool show) {
+void msMinefield_terminalPrintMinefield(Minesweeper *game, bool show) {
 
     for (uint8_t row = 0; row < game->nRows; ++row) {
 
@@ -201,54 +203,54 @@ void msMinefield_test() {
     printf("Beginner Game: \n");
 
     msMinefield_initGame(&msTestGame, GAME_BEG_MF_NUM_COLS, GAME_BEG_MF_NUM_ROWS, GAME_BEG_NUM_MINES);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_generateMineLocation(&msTestGame, 5, 5);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_revealCell(&msTestGame, 5,5);
     msMinefield_revealCell(&msTestGame, 3,3);
     msMinefield_toggleFlagCell(&msTestGame, 7,7);
-    msMinefield_printMinefield(&msTestGame, PRINT_NO);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_NO);
 
     msMinefield_freeMinesweeper(&msTestGame);
 
     printf("Intermediate Game: \n");
     
     msMinefield_initGame(&msTestGame, 16, 16, 40);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_generateMineLocation(&msTestGame, 8, 8);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_revealCell(&msTestGame, 8,8);
     msMinefield_revealCell(&msTestGame, 10,10);
     msMinefield_toggleFlagCell(&msTestGame, 12,12);
-    msMinefield_printMinefield(&msTestGame, PRINT_NO);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_NO);
 
     msMinefield_freeMinesweeper(&msTestGame);
 
     printf("Expert Game: \n");
     
     msMinefield_initGame(&msTestGame, 30, 16, 99);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_generateMineLocation(&msTestGame, 15, 8);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_printMinefield(&msTestGame, PRINT_YES);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_YES);
 
     msMinefield_revealCell(&msTestGame, 15,8);
     msMinefield_revealCell(&msTestGame, 18,11);
     msMinefield_toggleFlagCell(&msTestGame, 20,14);
-    msMinefield_printMinefield(&msTestGame, PRINT_NO);
+    msMinefield_consolePrintMinefield(&msTestGame, PRINT_NO);
 
     msMinefield_freeMinesweeper(&msTestGame);
 }
