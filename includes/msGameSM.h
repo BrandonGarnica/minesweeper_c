@@ -1,8 +1,8 @@
 #ifndef MSGAMESM_H_
 #define MSGAMESM_H_
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct {
     uint8_t mineProx;
@@ -16,11 +16,11 @@ typedef struct {
 } Mine;
 
 typedef struct {
-    Cell **minefield;   // Pointer to 2D array of Cell structs
-    Mine *mineList;     // Pointer to array of Mine struct   
-    uint8_t nCols;      // Number of columns
-    uint8_t nRows;     // Number of rows
-    uint8_t nMines; // Number of rows
+    Cell** minefield; // Pointer to 2D array of Cell structs
+    Mine* mineList;   // Pointer to array of Mine struct
+    uint8_t nCols;    // Number of columns
+    uint8_t nRows;    // Number of rows
+    uint8_t nMines;   // Number of rows
 } Minesweeper;
 
 extern Minesweeper msGame; // <- Exposes the global
