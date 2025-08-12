@@ -6,6 +6,4 @@
 #include <time.h>
 
 // msUtil.c
-bool msUtil_isInBounds(Minesweeper* game, int col, int row) {
-    return (col >= 0 && col < game->nCols && row >= 0 && row < game->nRows);
-}
+bool msUtil_isInBounds(int col, int row) { return (col >= 0 && col < msGame.nCols && row >= 0 && row < msGame.nRows); }

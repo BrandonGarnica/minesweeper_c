@@ -21,7 +21,9 @@
         "stdint.h": "c",
         "sdl.h": "c",
         "stdlib.h": "c",
-        "msminefield.h": "c"
+        "msminefield.h": "c",
+        "random": "c",
+        "cstdlib": "c"
     },
     "C_Cpp.formatting": "clangFormat",
     "C_Cpp.clang_format_style": "file"

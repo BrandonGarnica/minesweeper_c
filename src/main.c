@@ -13,7 +13,7 @@
 
 int main(int argc, char* argv[]) {
 
-    msMinefield_test();
-
+    //msMinefield_test();
+    msFloodFillSM_test();
     return 0;
 }

@@ -19,6 +19,9 @@
 #define PRINT_YES                     true
 #define PRINT_NO                      !PRINT_YES
 
-bool msUtil_isInBounds(Minesweeper* game, int col, int row);
+static const int8_t dx[CELL_NUM_OF_SURROUNDING_CELLS] = {0, -1, -1, -1, 0, 1, 1, 1};
+static const int8_t dy[CELL_NUM_OF_SURROUNDING_CELLS] = {-1, -1, 0, 1, 1, -1, 0, 1};
+
+bool msUtil_isInBounds(int col, int row);
 
 #endif /* MSUTIL_H_ */

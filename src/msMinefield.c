@@ -7,71 +7,84 @@
 #include <stdlib.h>
 #include <time.h>
 
-uint8_t msMinefield_initGame(Minesweeper* game, uint8_t numCols, uint8_t numRows, uint8_t numMines) {
-    game->nCols = numCols;   // Width
-    game->nRows = numRows;   // Height
-    game->nMines = numMines; // num_mines
+uint8_t msMinefield_initGame(uint8_t numCols, uint8_t numRows, uint8_t numMines) {
+
+    msGame.nCols = numCols;
+    msGame.nRows = numRows;
+    msGame.nMines = numMines;
 
     srand(time(NULL));
-
-    // Allocate outer array of column pointers
-    game->minefield = malloc(numCols * sizeof(Cell*));
-    if (game->minefield == NULL) {
+    msGame.minefield = malloc(numCols * sizeof(Cell*));
+    if (msGame.minefield == NULL) {
         return -1;
     }
 
     // Allocate each column with 'numRows' rows
     for (int col = 0; col < numCols; ++col) {
-        game->minefield[col] = malloc(numRows * sizeof(Cell));
-        if (game->minefield[col] == NULL) {
+
+        msGame.minefield[col] = malloc(numRows * sizeof(Cell));
+        if (msGame.minefield[col] == NULL) {
             return -1;
         }
 
         // Initialize each cell in this column
         for (int row = 0; row < numRows; ++row) {
-            game->minefield[col][row].mineProx = CELL_EMPTY;
-            game->minefield[col][row].isMine = false;
-            game->minefield[col][row].isFlagged = false;
-            game->minefield[col][row].isHidden = true;
+            msGame.minefield[col][row].mineProx = CELL_EMPTY;
+            msGame.minefield[col][row].isMine = false;
+            msGame.minefield[col][row].isFlagged = false;
+            msGame.minefield[col][row].isHidden = true;
         }
     }
 
     return 0; // Success
 }
 
-uint8_t msMinefield_generateMineLocation(Minesweeper* game, uint8_t safeCol, uint8_t safeRow) {
-    uint8_t numCols = game->nCols;
-    uint8_t numRows = game->nRows;
-    uint8_t numMines = game->nMines;
+uint8_t msMinefield_generateMineLocation(uint8_t safeCol, uint8_t safeRow) {
+    uint8_t numCols = msGame.nCols;
+    uint8_t numRows = msGame.nRows;
+    uint8_t numMines = msGame.nMines;
+
+    uint8_t reserved = 0;
+    for (int8_t dy = -1; dy <= 1; ++dy) {
+        for (int8_t dx = -1; dx <= 1; ++dx) {
+            if (msUtil_isInBounds(safeCol + dx, safeRow + dy)) {
+                reserved++;
+            }
+        }
+    }
+
+    const uint32_t capacity = (uint32_t)numCols * numRows;
+    if (numMines > capacity - reserved) {
+        return 1; // impossible request
+    }
 
     if (numMines > numCols * numRows) {
-        return 1;
+        return 2; // too many mines for grid size
     }
 
     Mine* locations = malloc(numMines * sizeof(Mine));
     if (!locations) {
-        return 2;
+        return 3; // allocation failed
     }
 
     bool* occupied = calloc(numCols * numRows, sizeof(bool));
     if (!occupied) {
         free(locations);
-        return 3;
+        return 4; // allocation failed
     }
 
-    // Mark surrounding area of avoidCol/avoidRow as unavailable
-    const int8_t dx[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
-    const int8_t dy[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
-
-    for (uint8_t i = 0; i < 9; i++) {
-        int8_t dxCol = safeCol + dx[i];
-        int8_t dxRow = safeRow + dy[i];
-        if (msUtil_isInBounds(game, dxRow, dxRow)) {
-            occupied[dxRow * numCols + dxCol] = true;
+    // Mark safe 3x3 zone around safeCol/safeRow
+    for (int8_t dy = -1; dy <= 1; dy++) {
+        for (int8_t dx = -1; dx <= 1; dx++) {
+            int8_t c = safeCol + dx;
+            int8_t r = safeRow + dy;
+            if (msUtil_isInBounds(c, r)) {
+                occupied[r * numCols + c] = true;
+            }
         }
     }
 
-    // Random placement
+    // Place mines randomly outside safe zone
     uint8_t placed = 0;
     while (placed < numMines) {
         uint16_t index = rand() % (numCols * numRows);
@@ -83,30 +96,25 @@ uint8_t msMinefield_generateMineLocation(Minesweeper* game, uint8_t safeCol, uin
         }
     }
 
-    game->mineList = locations;
+    msGame.mineList = locations;
 
-    // Places mines to game->minefield
+    // Apply mines to the minefield
     for (uint8_t i = 0; i < numMines; i++) {
-        uint8_t col = locations[i].col;
-        uint8_t row = locations[i].row;
-        game->minefield[col][row].isMine = true;
+        msGame.minefield[locations[i].col][locations[i].row].isMine = true;
     }
 
     free(occupied);
     return 0;
 }
 
-void msMinefield_updateMineProx(Minesweeper* game, uint8_t col, uint8_t row) {
-
-    const int8_t dx[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
-    const int8_t dy[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+void msMinefield_updateMineProx(uint8_t col, uint8_t row) {
 
     for (uint8_t i = 0; i < CELL_NUM_OF_SURROUNDING_CELLS; i++) {
         int8_t dxCol = col + dx[i];
         int8_t dxRow = row + dy[i];
 
-        if (msUtil_isInBounds(game, dxCol, dxRow)) {
-            Cell* neighbor = &game->minefield[dxCol][dxRow];
+        if (msUtil_isInBounds(dxCol, dxRow)) {
+            Cell* neighbor = &msGame.minefield[dxCol][dxRow];
             if (!neighbor->isMine) {
                 neighbor->mineProx++;
             }
@@ -114,20 +122,20 @@ void msMinefield_updateMineProx(Minesweeper* game, uint8_t col, uint8_t row) {
     }
 }
 
-void msMinefield_updateMinefieldProx(Minesweeper* game) {
+void msMinefield_updateMinefieldProx() {
 
-    for (uint8_t i = 0; i < game->nMines; i++) {
-        msMinefield_updateMineProx(game, game->mineList[i].col, game->mineList[i].row);
+    for (uint8_t i = 0; i < msGame.nMines; i++) {
+        msMinefield_updateMineProx(msGame.mineList[i].col, msGame.mineList[i].row);
     }
 }
 
-void msMinefield_toggleFlagCell(Minesweeper* game, uint8_t col, uint8_t row) {
+void msMinefield_toggleFlagCell(uint8_t col, uint8_t row) {
 
-    if (!msUtil_isInBounds(game, col, row)) {
+    if (!msUtil_isInBounds(col, row)) {
         return;
     }
 
-    Cell* cell = &game->minefield[col][row];
+    Cell* cell = &msGame.minefield[col][row];
 
     // Don't allow toggling flags on already revealed cells
     if (!cell->isHidden) {
@@ -138,13 +146,13 @@ void msMinefield_toggleFlagCell(Minesweeper* game, uint8_t col, uint8_t row) {
     // Draw Flagged icon on cell location
 }
 
-void msMinefield_revealCell(Minesweeper* game, uint8_t col, uint8_t row) {
+void msMinefield_revealCell(uint8_t col, uint8_t row) {
 
-    if (!msUtil_isInBounds(game, col, row)) {
+    if (!msUtil_isInBounds(col, row)) {
         return;
     }
 
-    Cell* cell = &game->minefield[col][row];
+    Cell* cell = &msGame.minefield[col][row];
 
     // Don't reveal flagged or already revealed cells
     if (!cell->isHidden || cell->isFlagged) {
@@ -155,56 +163,57 @@ void msMinefield_revealCell(Minesweeper* game, uint8_t col, uint8_t row) {
     // Draw cell prox or if mine
 }
 
+// Changes these 3 functiosn from Cell* Cell to just a col & row
 bool msMinefield_isRevealed(Cell* cell) { return !cell->isHidden; }
 
-bool msMinefield_hasNumber(Cell* cell) { return cell->mineProx > 0; }
+bool msMinefield_hasProx(Cell* cell) { return cell->mineProx > 0; }
 
 bool msMinefield_isMine(Cell* cell) { return cell->isMine; }
 
-void msMinefield_freeMinesweeper(Minesweeper* game) {
+void msMinefield_freeMinesweeper() {
 
-    uint8_t numRows = game->nRows;
+    uint8_t numRows = msGame.nRows;
 
-    if (game->minefield) {
-        for (uint8_t i = 0; i < numRows; ++i) {
-            if (game->minefield[i]) {
-                free(game->minefield[i]);
-            }
+    if (msGame.minefield) {
+        // You looped over rows. You allocated by columns.
+        for (uint8_t col = 0; col < msGame.nCols; ++col) {
+            free(msGame.minefield[col]);
         }
-        free(game->minefield);
-        game->minefield = NULL;
+        free(msGame.minefield);
+        msGame.minefield = NULL;
     }
-
-    if (game->mineList) {
-        free(game->mineList);
-        game->mineList = NULL;
-    }
-
-    game->nCols = 0;
-    game->nRows = 0;
-    game->nMines = 0;
+    free(msGame.mineList); // safe if NULL
+    msGame.mineList = NULL;
+    msGame.nCols = msGame.nRows = msGame.nMines = 0;
 }
 
-void msMinefield_terminalPrintMinefield(Minesweeper* game, bool show) {
+void msMinefield_terminalPrintMinefield(bool show) {
 
-    for (uint8_t row = 0; row < game->nRows; ++row) {
+    // Print column headers
+    printf("   "); // space for row labels
+    for (uint8_t col = 0; col < msGame.nCols; ++col) {
+        printf("%2d", col + 1);
+    }
+    printf("\n");
 
-        for (uint8_t col = 0; col < game->nCols; ++col) {
-            Cell cell = game->minefield[col][row];
+    for (uint8_t row = 0; row < msGame.nRows; ++row) {
+        // Print row label
+        printf("%2d ", row + 1);
+
+        for (uint8_t col = 0; col < msGame.nCols; ++col) {
+            Cell cell = msGame.minefield[col][row];
 
             if (!cell.isHidden || show) {
-
                 if (cell.isMine) {
-                    printf("* ");
+                    printf(" *");
                 } else {
-                    printf("%d ", cell.mineProx);
+                    printf(" %d", cell.mineProx);
                 }
             } else {
-
                 if (cell.isFlagged) {
-                    printf("F ");
+                    printf(" F");
                 } else {
-                    printf("# ");
+                    printf(" #");
                 }
             }
         }
@@ -215,61 +224,59 @@ void msMinefield_terminalPrintMinefield(Minesweeper* game, bool show) {
 
 void msMinefield_test() {
 
-    Minesweeper msTestGame;
-
     printf("msMinefield.c Test: \n");
 
     printf("Beginner Game: \n");
 
-    msMinefield_initGame(&msTestGame, GAME_BEG_MF_NUM_COLS, GAME_BEG_MF_NUM_ROWS, GAME_BEG_NUM_MINES);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_initGame(GAME_BEG_MF_NUM_COLS, GAME_BEG_MF_NUM_ROWS, GAME_BEG_NUM_MINES);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_generateMineLocation(&msTestGame, 5, 5);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_generateMineLocation(4, 4);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_updateMinefieldProx();
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_revealCell(&msTestGame, 5, 5);
-    msMinefield_revealCell(&msTestGame, 3, 3);
-    msMinefield_toggleFlagCell(&msTestGame, 7, 7);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_NO);
+    msMinefield_revealCell(4, 4);
+    msMinefield_revealCell(5, 5);
+    msMinefield_toggleFlagCell(7, 7);
+    msMinefield_terminalPrintMinefield(PRINT_NO);
 
-    msMinefield_freeMinesweeper(&msTestGame);
+    msMinefield_freeMinesweeper();
 
     printf("Intermediate Game: \n");
 
-    msMinefield_initGame(&msTestGame, 16, 16, 40);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_initGame(16, 16, 40);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_generateMineLocation(&msTestGame, 8, 8);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_generateMineLocation(7, 7);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_updateMinefieldProx();
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_revealCell(&msTestGame, 8, 8);
-    msMinefield_revealCell(&msTestGame, 10, 10);
-    msMinefield_toggleFlagCell(&msTestGame, 12, 12);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_NO);
+    msMinefield_revealCell(7, 7);
+    msMinefield_revealCell(10, 10);
+    msMinefield_toggleFlagCell(12, 12);
+    msMinefield_terminalPrintMinefield(PRINT_NO);
 
-    msMinefield_freeMinesweeper(&msTestGame);
+    msMinefield_freeMinesweeper();
 
     printf("Expert Game: \n");
 
-    msMinefield_initGame(&msTestGame, 30, 16, 99);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_initGame(30, 16, 99);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_generateMineLocation(&msTestGame, 15, 8);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_generateMineLocation(14, 9);
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_updateMinefieldProx(&msTestGame);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_YES);
+    msMinefield_updateMinefieldProx();
+    msMinefield_terminalPrintMinefield(PRINT_YES);
 
-    msMinefield_revealCell(&msTestGame, 15, 8);
-    msMinefield_revealCell(&msTestGame, 18, 11);
-    msMinefield_toggleFlagCell(&msTestGame, 20, 14);
-    msMinefield_terminalPrintMinefield(&msTestGame, PRINT_NO);
+    msMinefield_revealCell(14, 9);
+    msMinefield_revealCell(18, 11);
+    msMinefield_toggleFlagCell(20, 14);
+    msMinefield_terminalPrintMinefield(PRINT_NO);
 
-    msMinefield_freeMinesweeper(&msTestGame);
+    msMinefield_freeMinesweeper();
 }

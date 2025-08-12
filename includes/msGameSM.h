@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "msUtil.h"
+
 typedef struct {
     uint8_t mineProx;
     bool isMine;
