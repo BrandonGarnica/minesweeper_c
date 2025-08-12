@@ -1,27 +1,33 @@
-#ifndef MSMINEFIELD_H_
-#define MSMINEFIELD_H_
+#ifndef MSMINEFIELDSM_H_
+#define MSMINEFIELDSM_H_
 
 #include <stdint.h>
 #include <stdio.h>
 
-#include "msGame.h"
+#include "msGameSM.h"
 
-uint8_t msMinefield_initGame(Minesweeper *game, uint8_t numCols, uint8_t numRows, uint8_t num_mines);
+uint8_t msMinefield_initGame(uint8_t numCols, uint8_t numRows, uint8_t num_mines);
 
-uint8_t msMinefield_generateMineLocation(Minesweeper *game, uint8_t safeCol, uint8_t safeRow);
+uint8_t msMinefield_generateMineLocation(uint8_t safeCol, uint8_t safeRow);
 
-void msMinefield_updateMineProx(Minesweeper *game, uint8_t col, uint8_t row);
+void msMinefield_updateMineProx(uint8_t col, uint8_t row);
 
-void msMinefield_updateMinefieldProx(Minesweeper *game);
+void msMinefield_updateMinefieldProx();
 
-void msMinefield_toggleFlagCell(Minesweeper *game, uint8_t col, uint8_t row);
+void msMinefield_toggleFlagCell(uint8_t col, uint8_t row);
 
-void msMinefield_revealCell(Minesweeper *game, uint8_t col, uint8_t row);
+void msMinefield_revealCell(uint8_t col, uint8_t row);
 
-void msMinefield_freeMinesweeper(Minesweeper *game);
+bool msMinefield_isRevealed(Cell* cell);
 
-void msMinefield_printMinefield(Minesweeper *game, bool show);
+bool msMinefield_hasProx(Cell* cell);
+
+bool msMinefield_isMine(Cell* cell);
+
+void msMinefield_freeMinesweeper();
+
+void msMinefield_terminalPrintMinefield(bool show);
 
 void msMinefield_test();
 
-#endif /* MSMINEFIELD_H_ */
+#endif /* MSMINEFIELDSM_H_ */

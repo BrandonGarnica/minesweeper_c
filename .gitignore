@@ -35,3 +35,6 @@ desktop.ini
 # === Ignore only VS temp files, not JSON config ===
 .vscode/*.db
 .vscode/*.log
+
+# === Formatter ===
+.clang-format

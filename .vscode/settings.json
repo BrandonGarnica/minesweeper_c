@@ -3,7 +3,10 @@
     "terminal.integrated.profiles.windows": {
         "UCRT64": {
             "path": "C:\\msys64\\usr\\bin\\bash.exe",
-            "args": ["--login", "-i"],
+            "args": [
+                "--login",
+                "-i"
+            ],
             "env": {
                 "MSYSTEM": "UCRT64",
                 "CHERE_INVOKING": "1"
@@ -18,6 +21,10 @@
         "stdint.h": "c",
         "sdl.h": "c",
         "stdlib.h": "c",
-        "msminefield.h": "c"
-    }
+        "msminefield.h": "c",
+        "random": "c",
+        "cstdlib": "c"
+    },
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.clang_format_style": "file"
 }
