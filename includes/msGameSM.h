@@ -7,10 +7,12 @@
 #include "msUtil.h"
 
 typedef struct {
-    uint8_t mineProx;
     bool isMine;
     bool isFlagged;
     bool isHidden;
+    uint8_t mineProx;    // 0..8
+    uint8_t adjTotal;    // neighbors in-bounds: 3,5,8,...
+    uint8_t adjRevealed; // neighbors currently revealed: 0..adjTotal
 } Cell;
 
 typedef struct {
