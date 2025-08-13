@@ -13,7 +13,6 @@ typedef enum {
     FF_SM_IDLE,          // Wait here until interlock if off
     FF_SM_REVEAL_CURR,   // Reveal current cell location
     FF_SM_CHECK_ADJ,     // Check adjcent cells
-    FF_SM_PROCESS_CELLS, // Pop top cell info and move on to next
     FF_SM_DONE           // Done state
 } FF_State;
 
@@ -32,7 +31,8 @@ typedef struct {
     // stack of cells to process
     uint8_t stackCol[MAX_FF_STACK];
     uint8_t stackRow[MAX_FF_STACK];
-    uint16_t sp; // stack size
+    uint8_t stackNextIdx[MAX_FF_STACK];
+    int16_t sp; // stack size
 
     // current working cell
     uint8_t curCol;
@@ -57,9 +57,9 @@ void msFloodFillSM_enable();
 // Disables the state machine (locks until enabled again)
 void msFloodFillSM_disable();
 
-static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row);
+static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx);
 
-static inline bool msFloodFillSM_ffStack_pop(uint8_t* col, uint8_t* row);
+static inline bool msFloodFillSM_ffStack_pop();
 
 // One tick of the Flood Fill State Machine
 void msFloodFillSM_tick();
