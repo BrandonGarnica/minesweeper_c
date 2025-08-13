@@ -20,19 +20,43 @@
 
 FloodFillSM ffSM;
 
-static bool interlock = LOCKED;
+int8_t dxCol;
+int8_t dxRow;
+int8_t dxIdx;
+
+// Push current frame with resume index
+static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx) {
+    if (ffSM.sp >= MAX_FF_STACK) return false;
+    ffSM.stackCol[ffSM.sp] = col;
+    ffSM.stackRow[ffSM.sp] = row;
+    ffSM.stackNextIdx[ffSM.sp] = nextIdx; // resume neighbor slot after returning
+    ffSM.sp++;
+    return true;
+}
+
+// Pop frame and restore current and neighbor index
+static inline bool msFloodFillSM_ffStack_pop(void) {
+    if (ffSM.sp == 0) return false;
+    ffSM.sp--;
+    ffSM.curCol = ffSM.stackCol[ffSM.sp];
+    ffSM.curRow = ffSM.stackRow[ffSM.sp];
+    ffSM.nIdx = ffSM.stackNextIdx[ffSM.sp];
+    return true;
+}
 
 // Init SM
-void msFloodFillSM_init() {
-    // Copy msGame to ffSM game struct
-    ffSM.ffGame = &msGame;
-    // Init SM
+void msFloodFillSM_init(void) {
+    ffSM.busy = false;
+    ffSM.done = false;
+    ffSM.ffGame = &msGame; // mirror msGame pointer if you need it elsewhere
     ffSM.ffstate = FF_SM_INIT;
 }
 
-void msFloodFillSM_reset() {
+void msFloodFillSM_reset(void) {
+    ffSM.busy = false;
+    ffSM.done = false;
     ffSM.ffstate = FF_SM_INIT;
-    interlock = LOCKED;
+    ffSM.interlock = LOCKED;
 }
 
 void msFloodFillSM_setStartColRow(uint8_t col, uint8_t row) {
@@ -40,75 +64,22 @@ void msFloodFillSM_setStartColRow(uint8_t col, uint8_t row) {
     ffSM.startRow = row;
 }
 
-void msFloodFillSM_enable() { interlock = UNLOCKED; }
+void msFloodFillSM_enable(void) { ffSM.interlock = UNLOCKED; }
 
-void msFloodFillSM_disable() { interlock = LOCKED; }
+void msFloodFillSM_disable(void) { ffSM.interlock = LOCKED; }
 
-// Steps for FF
+void msFloodFillSM_tick(void) {
 
-// Assumptions:
-// start cell is NOT A MINE
-// Start cell DOES NOT HAVE A PROX
-// Start cell is ALWAYS A ZERO
-
-// 1) Reveal current cell
-// Reveal current cell -> Check Adj Cells
-
-// 2) Check Adj Cells
-// If cell is out of bounds -> Process Next Cell
-// If cell has already been revealed -> Process Next Cell
-// Reveal Cell
-// If cell has prox, don't include in stack
-// If cell has 0, stash location in stack - Check Adj Cells
-// Iterate 8 times (Number of adj cells)
-
-// 3) Process Cell
-// Pop cell location off stack.
-// Reveal next cell in stack -> Reveal Current Cell.
-// When stack is empty -> Done
-
-// 4) Done
-
-static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row) {
-    if (ffSM.sp >= MAX_FF_STACK) {
-        return false;
-    }
-    ffSM.stackCol[ffSM.sp] = col;
-    ffSM.stackRow[ffSM.sp] = row;
-    ffSM.sp++;
-    return true;
-}
-
-static inline bool msFloodFillSM_ffStack_pop(uint8_t* col, uint8_t* row) {
-    if (ffSM.sp == 0) {
-        return false;
-    }
-    // Dec stack position
-    ffSM.sp--;
-    // Pop top
-    *col = ffSM.stackCol[ffSM.sp];
-    *row = ffSM.stackRow[ffSM.sp];
-    return true;
-}
-
-void msFloodFillSM_tick() {
-
-    int8_t dxCol;
-    int8_t dxRow;
-
-    // Transition Actions
-
+    // TRANSITIONS
     switch (ffSM.ffstate) {
         case FF_SM_INIT: ffSM.ffstate = FF_SM_IDLE; break;
 
         case FF_SM_IDLE:
-
-            // Stay in idle state until interlock is unlocked
-            if (!interlock) {
+            if (!ffSM.interlock) {
                 ffSM.curCol = ffSM.startCol;
                 ffSM.curRow = ffSM.startRow;
                 ffSM.nIdx = 0;
-                ffSM.sp = 0; // ensure clean stack
+                ffSM.sp = 0;
                 ffSM.busy = true;
                 ffSM.done = false;
                 ffSM.ffstate = FF_SM_REVEAL_CURR;
@@ -116,113 +87,76 @@ void msFloodFillSM_tick() {
             break;
 
         case FF_SM_REVEAL_CURR:
+            // This stat is for us to decide in the futur if we want FF to handle game logic
+            // or to have a differen SM handle that logic.
+            Cell* revCell = &msGame.minefield[ffSM.curCol][ffSM.curRow];
+            msMinefield_revealCell(ffSM.curCol, ffSM.curRow);
 
-            Cell* curCell = &msGame.minefield[ffSM.curCol][ffSM.curRow];
-
-            if (msMinefield_isMine(curCell) || msMinefield_hasProx(curCell)) {
+            // If the start is a number or a mine, we are done. Otherwise descend into neighbors.
+            if (msMinefield_isMine(revCell) || msMinefield_hasProx(revCell)) {
                 ffSM.ffstate = FF_SM_DONE;
+                // Raise some kind of flag here for other SM logic
             } else {
                 ffSM.ffstate = FF_SM_CHECK_ADJ;
             }
-
             break;
 
         case FF_SM_CHECK_ADJ:
+            // Use O(1) early-out based on counters
+            Cell* curCell = &msGame.minefield[ffSM.curCol][ffSM.curRow];
+            bool exhausted = (curCell->adjRevealed == curCell->adjTotal);
 
-            // Stay in this loop 8 times to check all adj cells
-            if (ffSM.nIdx >= NUM_OF_ADJ_MINES) {
-                // printf("SM: FF_SM_CHECK_ADJ -> FF_SM_PROCESS_CELLS\n");
-                // Reset nIdx
-                ffSM.nIdx = 0;
-                ffSM.ffstate = FF_SM_PROCESS_CELLS;
-                break;
+            if (ffSM.nIdx >= NUM_OF_ADJ_MINES || (ffSM.nIdx == 0 && exhausted)) {
+                if (!msFloodFillSM_ffStack_pop()) ffSM.ffstate = FF_SM_DONE;
             }
-
             break;
-
-        case FF_SM_PROCESS_CELLS:
-            // ffSM.ffstate = FF_SM_REVEAL_CURR;
-            ffSM.ffstate = FF_SM_CHECK_ADJ;
-            // printf("Stack Position: %d\n", ffSM.sp);
-            if (ffSM.sp == 0) {
-                ffSM.ffstate = FF_SM_DONE;
-            }
-
-            break;
-
-        case FF_SM_DONE: break;
-
-        default: break;
     }
 
-    // State Actions
-
+    // STATE ACTIONS
     switch (ffSM.ffstate) {
         case FF_SM_INIT:
-            dxCol = 0;
-            dxRow = 0;
             ffSM.startCol = 0;
             ffSM.startRow = 0;
             ffSM.curCol = 0;
             ffSM.curRow = 0;
             ffSM.nIdx = 0;
             ffSM.sp = 0;
-            ffSM.busy = false;
-            ffSM.done = false;
             break;
 
         case FF_SM_IDLE: break;
 
-        case FF_SM_REVEAL_CURR:
-            // Assumption in reveal state:
-            // Current cell HAS NOT BEEN REVEALED
-            // Current cell is in game BOUNDS
-            msMinefield_revealCell(ffSM.curCol, ffSM.curRow);
-            break;
+        case FF_SM_REVEAL_CURR: break;
 
         case FF_SM_CHECK_ADJ:
             dxCol = ffSM.curCol + dx[ffSM.nIdx];
             dxRow = ffSM.curRow + dy[ffSM.nIdx];
-            ffSM.nIdx++;
-            // printf("\tCuCol: %d, CuRow: %d\n", ffSM.curCol + 1, ffSM.curRow + 1);
-            // printf("\tdxCol: %d, dxRow: %d\n", dxCol + 1, dxRow + 1);
-            // printf("\tCell Index: %d\n", ffSM.nIdx);
-            // Check if dxCol and dxRow are in bounds
-            if (!msUtil_isInBounds(dxCol, dxRow)) {
-                // printf("\tCell at (Col: %d, row: %d) IS NOT IN BOUNDS.\n", dxCol + 1, dxRow + 1);
-                break;
-            }
+            dxIdx = ++ffSM.nIdx; // pre-increment so parent resumes at the next slot
+
+            // Skip out-of-bounds
+            if (!msUtil_isInBounds(dxCol, dxRow)) break;
 
             Cell* dxCell = &msGame.minefield[dxCol][dxRow];
 
-            // Check is dxCell has already been revealed
-            if (msMinefield_isRevealed(dxCell)) {
-                // printf("\tCell at (Col: %d, row: %d) already revealed.\n", dxCol + 1, dxRow + 1);
-                break;
-            }
+            // Skip already revealed
+            if (msMinefield_isRevealed(dxCell)) break;
 
+            // Reveal neighbor
             msMinefield_revealCell(dxCol, dxRow);
 
-            // Store cells that are zero in stack
+            // If neighbor is zero, descend immediately: push current frame and switch focus
             if (dxCell->mineProx == 0) {
-                msFloodFillSM_ffStack_push(dxCol, dxRow);
-                // printf("\tCell at (Col: %d, row: %d) is a zero, saved to stack.\n", dxCol + 1, dxRow + 1);
-                // printf("\tStack Position: %d\n", ffSM.sp);
+                if (msFloodFillSM_ffStack_push(ffSM.curCol, ffSM.curRow, dxIdx)) {
+                    ffSM.curCol = dxCol;
+                    ffSM.curRow = dxRow;
+                    ffSM.nIdx = 0;
+                }
             }
             break;
 
-        case FF_SM_PROCESS_CELLS:
-            // Set new current cell to top of cell stack
-            if (msFloodFillSM_ffStack_pop(&ffSM.curCol, &ffSM.curRow)) {
-                // printf("\tPopping stack, current Col: %d & Row: %d\n", ffSM.curCol + 1, ffSM.curRow + 1);
-                // printf("\tStack Position: %d\n", ffSM.sp);
-                break;
-            }
         case FF_SM_DONE:
-
             ffSM.busy = false;
             ffSM.done = true;
-            interlock = LOCKED;
+            msFloodFillSM_disable();
             break;
 
         default: break;
@@ -252,11 +186,67 @@ void msFloodFillSM_test() {
     while (!ffSM.done) {
         msFloodFillSM_tick();
         nTicks++;
-        // msMinefield_terminalPrintMinefield(PRINT_NO);
     }
 
     // Check results
     printf("FloodFill finished in %d ticks\n", nTicks);
+    nTicks = 1;
 
     msMinefield_terminalPrintMinefield(PRINT_NO);
+
+    msMinefield_freeMinesweeper();
+
+    printf("Intermediate Game: \n");
+
+    msMinefield_initGame(16, 16, 40);
+    msMinefield_generateMineLocation(7, 7);
+    msMinefield_updateMinefieldProx();
+
+    msMinefield_terminalPrintMinefield(PRINT_YES);
+
+    // Init and run SM
+    msFloodFillSM_reset();
+    msFloodFillSM_init();
+    msFloodFillSM_setStartColRow(7, 7);
+    msFloodFillSM_enable();
+
+    while (!ffSM.done) {
+        msFloodFillSM_tick();
+        nTicks++;
+    }
+
+    // Check results
+    printf("FloodFill finished in %d ticks\n", nTicks);
+    nTicks = 0;
+
+    msMinefield_terminalPrintMinefield(PRINT_NO);
+
+    msMinefield_freeMinesweeper();
+
+    printf("Expert Game: \n");
+
+    msMinefield_initGame(30, 16, 99);
+    msMinefield_generateMineLocation(14, 9);
+    msMinefield_updateMinefieldProx();
+
+    msMinefield_terminalPrintMinefield(PRINT_YES);
+
+    // Init and run SM
+    msFloodFillSM_reset();
+    msFloodFillSM_init();
+    msFloodFillSM_setStartColRow(14, 9);
+    msFloodFillSM_enable();
+
+    while (!ffSM.done) {
+        msFloodFillSM_tick();
+        nTicks++;
+    }
+
+    // Check results
+    printf("FloodFill finished in %d ticks\n", nTicks);
+    nTicks = 0;
+
+    msMinefield_terminalPrintMinefield(PRINT_NO);
+
+    msMinefield_freeMinesweeper();
 }
