@@ -9,11 +9,11 @@
 #define MAX_FF_STACK 1024
 
 typedef enum {
-    FF_SM_INIT = 0,      // Initial State
-    FF_SM_IDLE,          // Wait here until interlock if off
-    FF_SM_REVEAL_CURR,   // Reveal current cell location
-    FF_SM_CHECK_ADJ,     // Check adjcent cells
-    FF_SM_DONE           // Done state
+    FF_SM_INIT = 0,    // Initial State
+    FF_SM_IDLE,        // Wait here until interlock if off
+    FF_SM_REVEAL_CURR, // Reveal current cell location
+    FF_SM_CHECK_ADJ,   // Check adjcent cells
+    FF_SM_DONE         // Done state
 } FF_State;
 
 typedef struct {
@@ -25,6 +25,7 @@ typedef struct {
 
     // internal
     FF_State ffstate;
+    bool interlock;
     bool busy;
     bool done;
 
