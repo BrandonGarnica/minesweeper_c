@@ -14,25 +14,48 @@ uint8_t msMinefield_initGame(uint8_t numCols, uint8_t numRows, uint8_t numMines)
     msGame.nMines = numMines;
 
     srand(time(NULL));
+
     msGame.minefield = malloc(numCols * sizeof(Cell*));
     if (msGame.minefield == NULL) {
-        return -1;
+        return 1;
     }
 
     // Allocate each column with 'numRows' rows
-    for (int col = 0; col < numCols; ++col) {
+    for (uint8_t col = 0; col < numCols; ++col) {
 
         msGame.minefield[col] = malloc(numRows * sizeof(Cell));
         if (msGame.minefield[col] == NULL) {
-            return -1;
+            // free previously allocated columns
+            for (uint8_t c = 0; c < col; ++c) {
+                free(msGame.minefield[c]);
+            }
+            free(msGame.minefield);
+            msGame.minefield = NULL;
+            return 1;
         }
 
         // Initialize each cell in this column
-        for (int row = 0; row < numRows; ++row) {
+        for (uint8_t row = 0; row < numRows; ++row) {
             msGame.minefield[col][row].mineProx = CELL_EMPTY;
+            msGame.minefield[col][row].adjRevealed = CELL_EMPTY;
             msGame.minefield[col][row].isMine = false;
             msGame.minefield[col][row].isFlagged = false;
             msGame.minefield[col][row].isHidden = true;
+
+            // compute adjTotal for this cell
+            uint8_t count = 0;
+            for (int8_t dy = -1; dy <= 1; ++dy) {
+                for (int8_t dx = -1; dx <= 1; ++dx) {
+                    if (!(dx == 0 && dy == 0)) {
+                        int16_t nc = (int16_t)col + dx;
+                        int16_t nr = (int16_t)row + dy;
+                        if (nc >= 0 && nc < numCols && nr >= 0 && nr < numRows) {
+                            ++count;
+                        }
+                    }
+                }
+            }
+            msGame.minefield[col][row].adjTotal = count;
         }
     }
 
@@ -160,6 +183,27 @@ void msMinefield_revealCell(uint8_t col, uint8_t row) {
     }
 
     cell->isHidden = false;
+
+    // Only propagate counts if this isn't a mine
+    if (!cell->isMine) {
+        for (int8_t dy = -1; dy <= 1; ++dy) {
+            for (int8_t dx = -1; dx <= 1; ++dx) {
+                // Skip self
+                if (!(dx == 0 && dy == 0)) {
+                    int16_t nc = (int16_t)col + dx;
+                    int16_t nr = (int16_t)row + dy;
+
+                    if (nc >= 0 && nc < msGame.nCols && nr >= 0 && nr < msGame.nRows) {
+                        Cell* n = &msGame.minefield[nc][nr];
+                        if (n->adjRevealed < n->adjTotal) {
+                            n->adjRevealed++; // idempotent due to isHidden check above
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Draw cell prox or if mine
 }
 
