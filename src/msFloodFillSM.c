@@ -28,21 +28,25 @@ int8_t dxIdx;
 
 // Push current frame with resume index
 static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx) {
-    if (ffSM.sp >= MAX_FF_STACK) return false;
-    ffSM.stackCol[ffSM.sp]     = col;
-    ffSM.stackRow[ffSM.sp]     = row;
-    ffSM.stackNextIdx[ffSM.sp] = nextIdx;   // resume neighbor slot after returning
+    if (ffSM.sp >= MAX_FF_STACK) {
+        return false;
+    }
+    ffSM.stackCol[ffSM.sp] = col;
+    ffSM.stackRow[ffSM.sp] = row;
+    ffSM.stackNextIdx[ffSM.sp] = nextIdx; // resume neighbor slot after returning
     ffSM.sp++;
     return true;
 }
 
 // Pop frame and restore current and neighbor index
 static inline bool msFloodFillSM_ffStack_pop(void) {
-    if (ffSM.sp == 0) return false;
+    if (ffSM.sp == 0) {
+        return false;
+    }
     ffSM.sp--;
     ffSM.curCol = ffSM.stackCol[ffSM.sp];
     ffSM.curRow = ffSM.stackRow[ffSM.sp];
-    ffSM.nIdx   = ffSM.stackNextIdx[ffSM.sp];
+    ffSM.nIdx = ffSM.stackNextIdx[ffSM.sp];
     return true;
 }
 
@@ -51,23 +55,30 @@ static inline bool msFloodFillSM_allAdjRevealed(uint8_t col, uint8_t row) {
     for (uint8_t i = 0; i < 8; i++) {
         int8_t ncol = (int8_t)col + dx[i];
         int8_t nrow = (int8_t)row + dy[i];
-        if (!msUtil_isInBounds(ncol, nrow)) continue;
+        if (!msUtil_isInBounds(ncol, nrow)) {
+            continue;
+        }
         Cell* nb = &msGame.minefield[(uint8_t)ncol][(uint8_t)nrow];
-        if (!msMinefield_isRevealed(nb)) return false;
+        if (!msMinefield_isRevealed(nb)) {
+            return false;
+        }
     }
     return true;
 }
 
-
 // Init SM
 void msFloodFillSM_init(void) {
-    ffSM.ffGame  = &msGame;    // mirror msGame pointer if you need it elsewhere
+    ffSM.busy = false;
+    ffSM.done = false;
+    ffSM.ffGame = &msGame; // mirror msGame pointer if you need it elsewhere
     ffSM.ffstate = FF_SM_INIT;
 }
 
 void msFloodFillSM_reset(void) {
+    ffSM.busy = false;
+    ffSM.done = false;
     ffSM.ffstate = FF_SM_INIT;
-    interlock    = LOCKED;
+    interlock = LOCKED;
 }
 
 void msFloodFillSM_setStartColRow(uint8_t col, uint8_t row) {
@@ -75,26 +86,25 @@ void msFloodFillSM_setStartColRow(uint8_t col, uint8_t row) {
     ffSM.startRow = row;
 }
 
-void msFloodFillSM_enable(void)  { interlock = UNLOCKED; }
+void msFloodFillSM_enable(void) { interlock = UNLOCKED; }
+
 void msFloodFillSM_disable(void) { interlock = LOCKED; }
 
 void msFloodFillSM_tick(void) {
 
     // TRANSITIONS
     switch (ffSM.ffstate) {
-        case FF_SM_INIT:
-            ffSM.ffstate = FF_SM_IDLE;
-            break;
+        case FF_SM_INIT: ffSM.ffstate = FF_SM_IDLE; break;
 
         case FF_SM_IDLE:
             if (!interlock) {
                 ffSM.curCol = ffSM.startCol;
                 ffSM.curRow = ffSM.startRow;
-                ffSM.nIdx   = 0;
-                ffSM.sp     = 0;          // clean stack
-                ffSM.busy   = true;
-                ffSM.done   = false;
-                ffSM.ffstate = FF_SM_REVEAL_CURR;   // used exactly once
+                ffSM.nIdx = 0;
+                ffSM.sp = 0; // clean stack
+                ffSM.busy = true;
+                ffSM.done = false;
+                ffSM.ffstate = FF_SM_REVEAL_CURR; // used exactly once
             }
             break;
 
@@ -114,8 +124,8 @@ void msFloodFillSM_tick(void) {
         } break;
 
         case FF_SM_CHECK_ADJ:
-            if (ffSM.nIdx >= NUM_OF_ADJ_MINES ||
-                (ffSM.nIdx == 0 && msFloodFillSM_allAdjRevealed(ffSM.curCol, ffSM.curRow))) {
+            if (ffSM.nIdx >= NUM_OF_ADJ_MINES
+                || (ffSM.nIdx == 0 && msFloodFillSM_allAdjRevealed(ffSM.curCol, ffSM.curRow))) {
                 if (!msFloodFillSM_ffStack_pop()) {
                     ffSM.ffstate = FF_SM_DONE;
                 } else {
@@ -126,8 +136,7 @@ void msFloodFillSM_tick(void) {
             break;
 
         case FF_SM_DONE:
-        default:
-            break;
+        default: break;
     }
     // STATE ACTIONS
     switch (ffSM.ffstate) {
@@ -138,8 +147,6 @@ void msFloodFillSM_tick(void) {
             ffSM.curRow = 0;
             ffSM.nIdx = 0;
             ffSM.sp = 0;
-            ffSM.busy = false;
-            ffSM.done = false;
             break;
 
         case FF_SM_IDLE:
@@ -154,16 +161,14 @@ void msFloodFillSM_tick(void) {
             // Process exactly one neighbor slot per tick
             dxCol = ffSM.curCol + dx[ffSM.nIdx];
             dxRow = ffSM.curRow + dy[ffSM.nIdx];
-            dxIdx = ++ffSM.nIdx;     // pre-increment so parent resumes at the next slot
+            dxIdx = ++ffSM.nIdx; // pre-increment so parent resumes at the next slot
 
             //printf("\t\tdxIdx: %d\n", dxIdx+1);
             //printf("\t\tdxCell at col: %d, row: %d", dxCol+1, dxRow+1);
 
-
-
             // Skip out-of-bounds
             if (!msUtil_isInBounds(dxCol, dxRow)) {
-                
+
                 //printf(", OUT OF BOUNDS\n");
                 break;
             }
@@ -171,7 +176,7 @@ void msFloodFillSM_tick(void) {
 
             // Skip already revealed
             if (msMinefield_isRevealed(dxCell)) {
-                
+
                 //printf(", ALREADY REVEALED\n", dxCol+1, dxRow+1);
                 break;
             }
@@ -181,12 +186,12 @@ void msFloodFillSM_tick(void) {
 
             // If neighbor is zero, descend immediately: push current frame and switch focus
             if (dxCell->mineProx == 0) {
-                
+
                 //printf(", Prox = 0, added to stack", dxCol+1, dxRow+1);
                 if (msFloodFillSM_ffStack_push(ffSM.curCol, ffSM.curRow, dxIdx)) {
                     ffSM.curCol = dxCol;
                     ffSM.curRow = dxRow;
-                    ffSM.nIdx   = 0;
+                    ffSM.nIdx = 0;
                     // stay in CHECK_ADJ; do not go back to REVEAL_CURR
                 }
                 // If push fails due to overflow, we simply do not descend. You can add logging here if desired.
@@ -200,8 +205,7 @@ void msFloodFillSM_tick(void) {
             interlock = LOCKED;
             break;
 
-        default:
-            break;
+        default: break;
     }
 }
 
@@ -225,7 +229,7 @@ void msFloodFillSM_test() {
 
     // Run until done or safety cap
     uint16_t nTicks = 1;
-    while (!ffSM.done ||  nTicks <= 1000) {
+    while (!ffSM.done) {
         //printf("Tick: %d\n", nTicks);
         //printf("\tCuCol: %d, CuRow: %d\n", ffSM.curCol + 1, ffSM.curRow + 1);
         //printf("\tCell Index: %d\n", ffSM.nIdx + 1);
@@ -258,7 +262,7 @@ void msFloodFillSM_test() {
     msFloodFillSM_setStartColRow(7, 7);
     msFloodFillSM_enable();
 
-    while (!ffSM.done ||  nTicks <= 1000) {
+    while (!ffSM.done) {
         //printf("Tick: %d\n", nTicks);
         //printf("\tCuCol: %d, CuRow: %d\n", ffSM.curCol + 1, ffSM.curRow + 1);
         //printf("\tCell Index: %d\n", ffSM.nIdx + 1);
@@ -291,7 +295,7 @@ void msFloodFillSM_test() {
     msFloodFillSM_setStartColRow(14, 9);
     msFloodFillSM_enable();
 
-    while (!ffSM.done ||  nTicks <= 1000) {
+    while (!ffSM.done) {
         //printf("Tick: %d\n", nTicks);
         //printf("\tCuCol: %d, CuRow: %d\n", ffSM.curCol + 1, ffSM.curRow + 1);
         //printf("\tCell Index: %d\n", ffSM.nIdx + 1);
