@@ -9,7 +9,7 @@
 typedef struct {
     bool isMine;
     bool isFlagged;
-    bool isHidden;
+    bool isHidden;       // CHANGE WORDING TO isRevealed BECAUSE THAT IS MORE INTUITIVE.
     uint8_t mineProx;    // 0..8
     uint8_t adjTotal;    // neighbors in-bounds: 3,5,8,...
     uint8_t adjRevealed; // neighbors currently revealed: 0..adjTotal
