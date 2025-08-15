@@ -8,33 +8,21 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_UINT8_T                    255
-#define NUM_OF_ADJ_MINES               8
-
-#define LOCKED                         true
-#define UNLOCKED                       false
-
-#define ERROR_LOACTION_FF_1            "[FF_SM]:1 "
-#define ERROR_LOACTION_FF_2            "[FF_SM]:2 "
-#define ERROR_STATEMENT_STACK_OVERFLOW "Stack overflow prevented\n"
-
 FloodFillSM ffSM;
 
 int8_t dxCol;
 int8_t dxRow;
 int8_t dxIdx;
 
-// Push current frame with resume index
 static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx) {
     if (ffSM.sp >= MAX_FF_STACK) return false;
     ffSM.stackCol[ffSM.sp] = col;
     ffSM.stackRow[ffSM.sp] = row;
-    ffSM.stackNextIdx[ffSM.sp] = nextIdx; // resume neighbor slot after returning
+    ffSM.stackNextIdx[ffSM.sp] = nextIdx;
     ffSM.sp++;
     return true;
 }
 
-// Pop frame and restore current and neighbor index
 static inline bool msFloodFillSM_ffStack_pop(void) {
     if (ffSM.sp == 0) return false;
     ffSM.sp--;
@@ -44,11 +32,9 @@ static inline bool msFloodFillSM_ffStack_pop(void) {
     return true;
 }
 
-// Init SM
 void msFloodFillSM_init(void) {
     ffSM.busy = false;
     ffSM.done = false;
-    ffSM.ffGame = &msGame; // mirror msGame pointer if you need it elsewhere
     ffSM.ffstate = FF_SM_INIT;
 }
 
@@ -89,11 +75,10 @@ void msFloodFillSM_tick(void) {
         case FF_SM_REVEAL_CURR:
             // This stat is for us to decide in the futur if we want FF to handle game logic
             // or to have a differen SM handle that logic.
-            Cell* revCell = &msGame.minefield[ffSM.curCol][ffSM.curRow];
             msMinefield_revealCell(ffSM.curCol, ffSM.curRow);
 
             // If the start is a number or a mine, we are done. Otherwise descend into neighbors.
-            if (msMinefield_isMine(revCell) || msMinefield_hasProx(revCell)) {
+            if (msMinefield_isMine(ffSM.curCol, ffSM.curRow) || msMinefield_hasProx(ffSM.curCol, ffSM.curRow)) {
                 ffSM.ffstate = FF_SM_DONE;
                 // Raise some kind of flag here for other SM logic
             } else {
@@ -110,6 +95,9 @@ void msFloodFillSM_tick(void) {
                 if (!msFloodFillSM_ffStack_pop()) ffSM.ffstate = FF_SM_DONE;
             }
             break;
+
+        case FF_SM_DONE: break;
+        default: break;
     }
 
     // STATE ACTIONS
@@ -135,16 +123,14 @@ void msFloodFillSM_tick(void) {
             // Skip out-of-bounds
             if (!msUtil_isInBounds(dxCol, dxRow)) break;
 
-            Cell* dxCell = &msGame.minefield[dxCol][dxRow];
-
             // Skip already revealed
-            if (msMinefield_isRevealed(dxCell)) break;
+            if (msMinefield_isRevealed(dxCol, dxRow)) break;
 
             // Reveal neighbor
             msMinefield_revealCell(dxCol, dxRow);
 
             // If neighbor is zero, descend immediately: push current frame and switch focus
-            if (dxCell->mineProx == 0) {
+            if (msGame.minefield[dxCol][dxRow].mineProx == 0) {
                 if (msFloodFillSM_ffStack_push(ffSM.curCol, ffSM.curRow, dxIdx)) {
                     ffSM.curCol = dxCol;
                     ffSM.curRow = dxRow;
@@ -169,10 +155,9 @@ void msFloodFillSM_test() {
 
     printf("Beginner Game: \n");
 
-    msMinefield_initGame(GAME_BEG_MF_NUM_COLS, GAME_BEG_MF_NUM_ROWS, GAME_BEG_NUM_MINES);
+    msMinefield_initParams(GAME_BEG_MF_NUM_COLS, GAME_BEG_MF_NUM_ROWS, GAME_BEG_NUM_MINES);
+    msMinefield_generateMinefield();
     msMinefield_generateMineLocation(4, 4);
-    msMinefield_updateMinefieldProx();
-
     msMinefield_terminalPrintMinefield(PRINT_YES);
 
     // Init and run SM
@@ -183,6 +168,7 @@ void msFloodFillSM_test() {
 
     // Run until done or safety cap
     uint16_t nTicks = 1;
+
     while (!ffSM.done) {
         msFloodFillSM_tick();
         nTicks++;
@@ -198,10 +184,9 @@ void msFloodFillSM_test() {
 
     printf("Intermediate Game: \n");
 
-    msMinefield_initGame(16, 16, 40);
+    msMinefield_initParams(16, 16, 40);
+    msMinefield_generateMinefield();
     msMinefield_generateMineLocation(7, 7);
-    msMinefield_updateMinefieldProx();
-
     msMinefield_terminalPrintMinefield(PRINT_YES);
 
     // Init and run SM
@@ -210,6 +195,7 @@ void msFloodFillSM_test() {
     msFloodFillSM_setStartColRow(7, 7);
     msFloodFillSM_enable();
 
+    // Run until done or safety cap
     while (!ffSM.done) {
         msFloodFillSM_tick();
         nTicks++;
@@ -217,7 +203,7 @@ void msFloodFillSM_test() {
 
     // Check results
     printf("FloodFill finished in %d ticks\n", nTicks);
-    nTicks = 0;
+    nTicks = 1;
 
     msMinefield_terminalPrintMinefield(PRINT_NO);
 
@@ -225,10 +211,9 @@ void msFloodFillSM_test() {
 
     printf("Expert Game: \n");
 
-    msMinefield_initGame(30, 16, 99);
+    msMinefield_initParams(30, 16, 99);
+    msMinefield_generateMinefield();
     msMinefield_generateMineLocation(14, 9);
-    msMinefield_updateMinefieldProx();
-
     msMinefield_terminalPrintMinefield(PRINT_YES);
 
     // Init and run SM
@@ -237,6 +222,7 @@ void msFloodFillSM_test() {
     msFloodFillSM_setStartColRow(14, 9);
     msFloodFillSM_enable();
 
+    // Run until done or safety cap
     while (!ffSM.done) {
         msFloodFillSM_tick();
         nTicks++;
@@ -244,7 +230,7 @@ void msFloodFillSM_test() {
 
     // Check results
     printf("FloodFill finished in %d ticks\n", nTicks);
-    nTicks = 0;
+    nTicks = 1;
 
     msMinefield_terminalPrintMinefield(PRINT_NO);
 

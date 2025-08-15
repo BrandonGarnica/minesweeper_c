@@ -6,7 +6,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_FF_STACK 1024
+#define MAX_FF_STACK     1024
+
+#define MAX_UINT8_T      255
+#define NUM_OF_ADJ_MINES 8
+
+#define LOCKED           true
+#define UNLOCKED         false
 
 typedef enum {
     FF_SM_INIT = 0,    // Initial State
@@ -17,8 +23,6 @@ typedef enum {
 } FF_State;
 
 typedef struct {
-    // external
-    Minesweeper* ffGame;
     // start col & row will be set by either msGameSM or msMinefield
     uint8_t startCol;
     uint8_t startRow;
@@ -41,7 +45,11 @@ typedef struct {
     uint8_t nIdx;
 } FloodFillSM;
 
-// extern FloodFillSM ffSM;
+// Push current frame with resume index
+static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx);
+
+// Pop frame and restore current and neighbor index
+static inline bool msFloodFillSM_ffStack_pop();
 
 // Initializes the Flood Fill State Machine
 void msFloodFillSM_init();
@@ -57,10 +65,6 @@ void msFloodFillSM_enable();
 
 // Disables the state machine (locks until enabled again)
 void msFloodFillSM_disable();
-
-static inline bool msFloodFillSM_ffStack_push(uint8_t col, uint8_t row, uint8_t nextIdx);
-
-static inline bool msFloodFillSM_ffStack_pop();
 
 // One tick of the Flood Fill State Machine
 void msFloodFillSM_tick();
