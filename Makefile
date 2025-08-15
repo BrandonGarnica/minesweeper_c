@@ -1,38 +1,51 @@
-# Cross-platform Makefile for MSYS2 UCRT64 environment
-
 ROOT_DIR      := $(CURDIR)
-BUILD_DIR     := $(ROOT_DIR)/build
+# Select backend: sdl (default) or embedded
+BACKEND       ?= sdl
+
+BUILD_DIR     := $(ROOT_DIR)/build/$(BACKEND)
 BIN_DIR_DEBUG := $(BUILD_DIR)/bin/Debug
 BIN_DIR_REL   := $(BUILD_DIR)/bin/Release
 EXE_NAME      := minesweeper.exe
 
-CMAKE         := cmake
-MAKE          := make
-CC            := gcc
-CXX           := g++
+CMAKE := cmake
+MAKE  := make
+CC    := gcc
+
+# Map BACKEND -> CMake flags
+ifeq ($(BACKEND),sdl)
+  CMAKE_BACKEND_FLAGS := -DUSE_SDL=ON
+else ifeq ($(BACKEND),embedded)
+  CMAKE_BACKEND_FLAGS := -DUSE_SDL=OFF
+else
+  $(error BACKEND must be 'sdl' or 'embedded')
+endif
 
 .PHONY: all setup debug release clean run
 
 all: debug
 
-setup:
-	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Debug ..
-
 debug:
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" \
+		-DCMAKE_BUILD_TYPE=Debug $(CMAKE_BACKEND_FLAGS) $(ROOT_DIR)
 	cd $(BUILD_DIR) && $(MAKE)
 
 release:
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" \
+		-DCMAKE_BUILD_TYPE=Release $(CMAKE_BACKEND_FLAGS) $(ROOT_DIR)
 	cd $(BUILD_DIR) && $(MAKE)
 
-clean:
-	rm -rf $(BUILD_DIR)
+setup:
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(CMAKE) -G "Unix Makefiles" \
+		-DCMAKE_C_COMPILER=$(CC) $(CMAKE_BACKEND_FLAGS) $(ROOT_DIR) \
+		$(CMAKE_BACKEND_FLAGS) $(ROOT_DIR)
 
-# Allow setting CONFIG=Debug or CONFIG=Release when running 'make run'
+clean:
+	rm -rf $(ROOT_DIR)/build
+
+# Allow CONFIG=Debug or CONFIG=Release when running 'make run'
 CONFIG ?= Debug
 
 run:
